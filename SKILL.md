@@ -77,51 +77,109 @@ BRIDGE_API_URL=http://localhost:8080
 EOF
 ```
 
-### 5. Authorize groups
+### 5. Register chats
 
-For each group that should have WhatsApp access, update its registration with `authorizedSkills`. The `scopedParams` pin each agent to its own chat:
+Ask the user which WhatsApp chat(s) to connect. Use `AskUserQuestion` to determine:
+
+1. **Main chat or additional?** The main chat responds to all messages without a trigger. Additional chats require the trigger word.
+2. **Which chat?** Get the WhatsApp JID. For personal/DM chats, the JID is `<phone>@s.whatsapp.net`. For groups, it's `<id>@g.us`.
+
+If the user doesn't know their group JID, the Go bridge's database has the info:
+```bash
+sqlite3 skills/whatsapp/whatsapp-mcp/whatsapp-bridge/store/messages.db "SELECT DISTINCT chat_jid FROM messages ORDER BY timestamp DESC LIMIT 20"
+```
+
+#### Main chat (full access, no trigger required)
+
+The main chat gets unrestricted access to all WhatsApp tools — it can message any chat, list all chats, search contacts, etc.
+
+Register via IPC (write JSON to `data/ipc/main/tasks/`):
+```json
+{
+  "type": "register_group",
+  "jid": "<whatsapp-jid>",
+  "name": "<chat-name>",
+  "folder": "main",
+  "trigger": "@ASSISTANT_NAME",
+  "requiresTrigger": false,
+  "authorizedSkills": {
+    "whatsapp": {
+      "pinnedParams": {}
+    }
+  }
+}
+```
+
+Replace `ASSISTANT_NAME` with the configured assistant name (from `.env` or default `Andy`).
+
+#### Additional chats (scoped, trigger required)
+
+Additional chats get scoped access — they can only send/receive messages in their own JID. All tools with JID/recipient params are pinned.
 
 ```json
 {
+  "type": "register_group",
+  "jid": "<whatsapp-jid>",
+  "name": "<chat-name>",
+  "folder": "<folder-name>",
+  "trigger": "@ASSISTANT_NAME",
+  "requiresTrigger": true,
   "authorizedSkills": {
     "whatsapp": {
       "pinnedParams": {
-        "send_message.recipient": "<group-jid>",
-        "list_messages.chat_jid": "<group-jid>",
-        "get_chat.chat_jid": "<group-jid>",
-        "get_contact_chats.jid": "<group-jid>",
-        "get_last_interaction.jid": "<group-jid>",
-        "send_file.recipient": "<group-jid>",
-        "send_audio_message.recipient": "<group-jid>"
+        "send_message.recipient": "<whatsapp-jid>",
+        "list_messages.chat_jid": "<whatsapp-jid>",
+        "get_chat.chat_jid": "<whatsapp-jid>",
+        "get_contact_chats.jid": "<whatsapp-jid>",
+        "get_last_interaction.jid": "<whatsapp-jid>",
+        "send_file.recipient": "<whatsapp-jid>",
+        "send_audio_message.recipient": "<whatsapp-jid>"
       }
     }
   }
 }
 ```
 
-The main group typically has no pinned params (full access to all chats).
+The `folder` must be a unique, filesystem-safe name (lowercase, no spaces — e.g., `family-group`, `work-team`). Each folder gets its own isolated agent memory in `groups/<folder>/`.
+
+#### Updating an existing group
+
+To add WhatsApp skill authorization to an already-registered group, use the same `register_group` IPC with the existing JID and folder. It will upsert (replace the registration with the new config including `authorizedSkills`).
 
 ### 6. Restart nonnaclaw
 
 ```bash
 npm run build
 launchctl kickstart -k gui/$(id -u)/com.nanoclaw  # macOS
+# Linux: systemctl --user restart nanoclaw
 ```
 
 The MCP bridge will spawn the Python MCP server via `uv`, connect over stdio, and expose it to containers via HTTP.
 
+### 7. Verify
+
+Tell the user to send a test message in their registered chat. Check logs:
+```bash
+tail -f logs/nanoclaw.log
+```
+
+Look for:
+- `MCP bridge started` — the bridge spawned the Python MCP server
+- `Upstream MCP tools discovered` — tools were enumerated
+- Messages appearing in the log from `list_messages` polling
+
 ## Architecture
 
 ```
-Go bridge (separate service)         ← WhatsApp WebSocket, SQLite
-    ↕ HTTP (localhost:8080)
-Python MCP server (spawned by bridge) ← stdio MCP, 12 tools
-    ↕ stdio
-Nonnaclaw MCP bridge                 ← polls list_messages, HTTP endpoint
-    ↕ HTTP (localhost:PORT/mcp)
-Container MCP proxy                  ← scopeTemplate rules, param pinning
-    ↕ stdio
-Claude agent                         ← calls send_message, search_contacts, etc.
+Go bridge (separate service)         <- WhatsApp WebSocket, SQLite
+    | HTTP (localhost:8080)
+Python MCP server (spawned by bridge) <- stdio MCP, 12 tools
+    | stdio
+Nonnaclaw MCP bridge                 <- polls list_messages, HTTP endpoint
+    | HTTP (localhost:PORT/mcp)
+Container MCP proxy                  <- scopeTemplate rules, param pinning
+    | stdio
+Claude agent                         <- calls send_message, search_contacts, etc.
 ```
 
 ## MCP Tools (from lharries/whatsapp-mcp)
