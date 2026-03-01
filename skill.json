@@ -1,13 +1,18 @@
 {
   "name": "whatsapp",
-  "version": "1.0.0",
-  "description": "WhatsApp channel via Baileys",
-  "inbound": {
-    "entrypoint": "./dist/service.js",
-    "persistent": true
+  "version": "2.0.0",
+  "description": "WhatsApp channel via Baileys MCP server",
+  "mcp": {
+    "command": "node",
+    "args": ["./dist/mcp-server.js"],
+    "envKeys": ["ASSISTANT_NAME", "ASSISTANT_HAS_OWN_NUMBER"],
+    "pollTool": "list_new_messages",
+    "pollIntervalMs": 3000
   },
-  "outbound": {
-    "jidPatterns": ["*@g.us", "*@s.whatsapp.net", "*@lid"]
-  },
-  "envKeys": ["ASSISTANT_NAME", "ASSISTANT_HAS_OWN_NUMBER"]
+  "scopeTemplate": {
+    "send_message": { "allow": true, "scopedParams": ["chat_id"] },
+    "list_new_messages": { "allow": true },
+    "list_chats": { "allow": false },
+    "search_contacts": { "allow": true }
+  }
 }

@@ -1,10 +1,10 @@
-# WhatsApp Skill for NanoClaw
+# WhatsApp Skill for Nonnaclaw
 
-Connects NanoClaw to WhatsApp via [Baileys](https://github.com/WhiskeySockets/Baileys). Runs as a persistent service that relays messages between WhatsApp and NanoClaw's inbox/outbox.
+MCP server wrapping [Baileys](https://github.com/WhiskeySockets/Baileys) for WhatsApp integration. Runs as a persistent MCP server on the host, spawned by the MCP bridge. Containers access it via HTTP proxy with per-group tool scoping.
 
 ## Setup
 
-1. Clone into your NanoClaw `skills/` directory:
+1. Clone into your `skills/` directory:
    ```bash
    cd skills/
    git clone https://github.com/nickdirienzo/nonnaclaw-whatsapp whatsapp
@@ -22,7 +22,7 @@ Connects NanoClaw to WhatsApp via [Baileys](https://github.com/WhiskeySockets/Ba
    npm run auth -- --pairing-code --phone 14155551234
    ```
 
-3. Set environment variables in your NanoClaw `.env`:
+3. Set environment variables in your project `.env`:
    ```
    ASSISTANT_NAME=YourAssistantName
    ASSISTANT_HAS_OWN_NUMBER=false
@@ -30,18 +30,46 @@ Connects NanoClaw to WhatsApp via [Baileys](https://github.com/WhiskeySockets/Ba
    - `ASSISTANT_NAME`: Name prefix for outbound messages (when `ASSISTANT_HAS_OWN_NUMBER=false`)
    - `ASSISTANT_HAS_OWN_NUMBER`: Set `true` if the assistant has its own WhatsApp number (no name prefix needed)
 
-4. Start NanoClaw. The WhatsApp skill starts automatically as a persistent service.
+4. Authorize groups. For each group that should have WhatsApp access, add to its `authorizedSkills`:
+   ```json
+   {
+     "authorizedSkills": {
+       "whatsapp": {
+         "pinnedParams": {
+           "send_message.chat_id": "<group-jid>"
+         }
+       }
+     }
+   }
+   ```
+   The `chat_id` parameter is pinned per-group so each agent can only send messages to its own chat.
 
-## How It Works
+5. Restart the service. The MCP bridge will spawn the WhatsApp MCP server and expose it to containers.
 
-- **Inbound**: Listens for WhatsApp messages, writes them as JSON events to NanoClaw's inbox directory
-- **Outbound**: Polls NanoClaw's outbox directory for messages to send via WhatsApp
-- **Group sync**: Periodically syncs group metadata (names, participants) to NanoClaw
-- **Auth state**: Stored in `store/auth/` — persists across restarts
+## Architecture
 
-## JID Patterns
+```
+Host (MCP Bridge)
+├── Spawns: node skills/whatsapp/dist/mcp-server.js (stdio)
+├── Connects as MCP client
+├── Polls: list_new_messages every 3s → InboxEvents
+└── Exposes: HTTP endpoint on localhost:{port}/mcp
 
-This skill handles all WhatsApp JID types:
-- `*@g.us` (groups)
-- `*@s.whatsapp.net` (individual chats)
-- `*@lid` (linked device IDs, auto-translated to phone JIDs)
+Container (MCP Proxy)
+├── Connects to host HTTP endpoint
+├── Applies scopeTemplate rules (tool allowlist + param pinning)
+└── Agent calls: send_message, search_contacts
+```
+
+## MCP Tools
+
+| Tool | Description | Scoped |
+|------|-------------|--------|
+| `send_message` | Send a WhatsApp message | `chat_id` pinned per-group |
+| `list_new_messages` | Get messages since timestamp (polling) | Allowed |
+| `list_chats` | List available chats/groups | Blocked by default |
+| `search_contacts` | Search contacts by name/number | Allowed |
+
+## Auth state
+
+Stored in `store/auth/` — persists across restarts. If auth fails, delete `store/auth/` and run `npm run auth` again.

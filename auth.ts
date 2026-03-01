@@ -1,7 +1,7 @@
 /**
  * WhatsApp Authentication Script
  *
- * Run this to authenticate with WhatsApp.
+ * Run this to authenticate with WhatsApp before starting the MCP server.
  * Displays QR code, waits for scan, saves credentials, then exits.
  *
  * Usage: npm run auth
@@ -21,7 +21,7 @@ import makeWASocket, {
   useMultiFileAuthState,
 } from '@whiskeysockets/baileys';
 
-const STORE_DIR = process.env.NANOCLAW_STORE_DIR || path.resolve(import.meta.dirname, '../../store');
+const STORE_DIR = process.env.NONNACLAW_STORE_DIR || path.resolve(import.meta.dirname, '../../store');
 const AUTH_DIR = path.join(STORE_DIR, 'auth');
 const QR_FILE = path.join(STORE_DIR, 'qr-data.txt');
 const STATUS_FILE = path.join(STORE_DIR, 'auth-status.txt');
@@ -127,7 +127,7 @@ async function connectSocket(
       try { fs.unlinkSync(QR_FILE); } catch {}
       console.log('\n✓ Successfully authenticated with WhatsApp!');
       console.log(`  Credentials saved to ${AUTH_DIR}/`);
-      console.log('  You can now start the NanoClaw service.\n');
+      console.log('  You can now start the service.\n');
       setTimeout(() => process.exit(0), 1000);
     }
   });

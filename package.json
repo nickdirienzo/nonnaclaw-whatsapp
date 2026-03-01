@@ -1,6 +1,6 @@
 {
-  "name": "nanoclaw-skill-whatsapp",
-  "version": "1.0.0",
+  "name": "nonnaclaw-whatsapp",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,6 +8,7 @@
     "auth": "tsx auth.ts"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
     "@whiskeysockets/baileys": "^6.7.16",
     "pino": "^9.6.0",
     "qrcode-terminal": "^0.12.0"
