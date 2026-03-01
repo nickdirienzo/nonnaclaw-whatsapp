@@ -20,17 +20,27 @@ git clone https://github.com/verygoodplugins/whatsapp-mcp.git
 
 The Go bridge maintains the WhatsApp WebSocket connection and stores messages in SQLite.
 
+First, build the binary:
+
 ```bash
 cd skills/whatsapp/whatsapp-mcp/whatsapp-bridge
 go build -o whatsapp-bridge .
-./whatsapp-bridge
 ```
 
-On first run, a QR code appears in the terminal. Tell the user:
+**IMPORTANT:** Do NOT run the bridge from within Claude Code. The QR code it displays will be cut off and unscannable. Instead, tell the user to run it themselves in a separate terminal:
 
-> Open WhatsApp on your phone > Settings > Linked Devices > Link a Device, then scan the QR code in the terminal.
+> Please open a new terminal window and run:
+>
+> ```
+> cd <absolute-path-to>/skills/whatsapp/whatsapp-mcp/whatsapp-bridge
+> ./whatsapp-bridge
+> ```
+>
+> A QR code will appear. Open WhatsApp on your phone > Settings > Linked Devices > Link a Device, then scan the QR code.
+>
+> Once you see "Successfully connected and authenticated!", press Ctrl+C to stop the bridge and come back here.
 
-Wait for `Connected` in the output, then stop the bridge (Ctrl+C). Auth state is saved in `store/` and persists.
+Use `AskUserQuestion` to deliver the above instructions and wait for the user to confirm they've completed the QR scan. Only proceed to the next step after the user confirms.
 
 ### 3. Run the Go bridge as a service
 
