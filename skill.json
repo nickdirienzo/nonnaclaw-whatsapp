@@ -1,7 +1,7 @@
 {
   "name": "whatsapp",
   "version": "2.0.0",
-  "description": "WhatsApp channel via lharries/whatsapp-mcp",
+  "description": "WhatsApp channel via verygoodplugins/whatsapp-mcp",
   "mcp": {
     "command": "uv",
     "args": ["--directory", "./whatsapp-mcp/whatsapp-mcp-server", "run", "main.py"],

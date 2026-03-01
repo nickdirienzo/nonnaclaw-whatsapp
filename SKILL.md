@@ -1,6 +1,6 @@
 # WhatsApp Skill for Nonnaclaw
 
-WhatsApp integration using the community [lharries/whatsapp-mcp](https://github.com/lharries/whatsapp-mcp) server. No custom WhatsApp code — just config around the community MCP.
+WhatsApp integration using the community [verygoodplugins/whatsapp-mcp](https://github.com/verygoodplugins/whatsapp-mcp) server. No custom WhatsApp code — just config around the community MCP.
 
 ## Prerequisites
 
@@ -13,7 +13,7 @@ WhatsApp integration using the community [lharries/whatsapp-mcp](https://github.
 
 ```bash
 cd skills/whatsapp
-git clone https://github.com/lharries/whatsapp-mcp.git
+git clone https://github.com/verygoodplugins/whatsapp-mcp.git
 ```
 
 ### 2. Build and authenticate the Go bridge
@@ -163,7 +163,7 @@ Container MCP proxy                   <- scopeTemplate rules, param pinning
 Claude agent                          <- calls send_message, search_contacts, etc.
 ```
 
-## MCP Tools (from lharries/whatsapp-mcp)
+## MCP Tools (from verygoodplugins/whatsapp-mcp)
 
 | Tool | Description | Scoped |
 |------|-------------|--------|
