@@ -1,2 +1,4 @@
 node_modules/
 dist/
+# Community MCP server cloned during install
+whatsapp-mcp/

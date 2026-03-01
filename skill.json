@@ -1,18 +1,26 @@
 {
   "name": "whatsapp",
   "version": "2.0.0",
-  "description": "WhatsApp channel via Baileys MCP server",
+  "description": "WhatsApp channel via lharries/whatsapp-mcp",
   "mcp": {
-    "command": "node",
-    "args": ["./dist/mcp-server.js"],
-    "envKeys": ["ASSISTANT_NAME", "ASSISTANT_HAS_OWN_NUMBER"],
-    "pollTool": "list_new_messages",
-    "pollIntervalMs": 3000
+    "command": "uv",
+    "args": ["--directory", "./whatsapp-mcp/whatsapp-mcp-server", "run", "main.py"],
+    "pollTool": "list_messages",
+    "pollIntervalMs": 3000,
+    "pollTimestampArg": "after"
   },
   "scopeTemplate": {
-    "send_message": { "allow": true, "scopedParams": ["chat_id"] },
-    "list_new_messages": { "allow": true },
-    "list_chats": { "allow": false },
-    "search_contacts": { "allow": true }
+    "send_message": { "allow": true, "scopedParams": ["recipient"] },
+    "list_messages": { "allow": true, "scopedParams": ["chat_jid"] },
+    "search_contacts": { "allow": true },
+    "get_chat": { "allow": true, "scopedParams": ["chat_jid"] },
+    "get_direct_chat_by_contact": { "allow": true },
+    "get_contact_chats": { "allow": true, "scopedParams": ["jid"] },
+    "get_last_interaction": { "allow": true, "scopedParams": ["jid"] },
+    "get_message_context": { "allow": true },
+    "send_file": { "allow": true, "scopedParams": ["recipient"] },
+    "send_audio_message": { "allow": true, "scopedParams": ["recipient"] },
+    "download_media": { "allow": true },
+    "list_chats": { "allow": false }
   }
 }
